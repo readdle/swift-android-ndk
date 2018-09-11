@@ -1,0 +1,5 @@
+module AndroidNDK [system] {
+    header "AndroidNDK.h"
+    link "log"
+    link "android"
+}
