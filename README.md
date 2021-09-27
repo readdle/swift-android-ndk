@@ -1,3 +1,3 @@
-# swift-android-ndk
+# AndroidNDK
 
 A description of this package.
