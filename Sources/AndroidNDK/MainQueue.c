@@ -1,16 +1,13 @@
 #ifndef AndroidNDK_h
 #define AndroidNDK_h
 
-#include <android/log.h>
 #include <android/looper.h>
+#include <android/log.h>
 
 #include <pthread.h>
 
 #include <CoreFoundation/CoreFoundation.h>
-
-void android_log(android_LogPriority priority, const char* tag, const char* message) {
-    __android_log_print(priority, tag, "%s", message);
-}
+#include <dispatch/dispatch.h>
 
 typedef struct _per_run_data {
     uint32_t a;
@@ -46,7 +43,11 @@ typedef struct __CFRunLoop {
     CFLock_t _timerTSRLock;
 } InternalCFRunLoop;
 
+
+#define APPNAME "MyApp"
+
 int looperCallback(int fd, int events, void *data) {
+    __android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "Start looper callback");
     while (true) {
         int result = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1.0, true);
         if (result == kCFRunLoopRunFinished) {
@@ -66,13 +67,20 @@ int looperCallback(int fd, int events, void *data) {
     return 1; // continue listening for events
 }
 
-void setup() {
+int _dispatch_get_main_queue_port_4CF(void);
+
+void setupMainQueue() {
     CFRunLoopRef mainLoop = CFRunLoopGetMain();
     InternalCFRunLoop *loop = mainLoop;
     __CFPort fd = loop->_wakeUpPort;
     ALooper *looper = ALooper_forThread();
-    ALooper_addFd(looper, fd, 0, ALOOPER_EVENT_INPUT, &looperCallback, NULL);
+    int result = ALooper_addFd(looper, fd, 0, ALOOPER_EVENT_INPUT, &looperCallback, NULL);
+    __android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "Setup Main Queue with fd %d with result %d", fd, result);
+    loop->_perRunData->ignoreWakeUps = 0x0;
 
+    int d = _dispatch_get_main_queue_port_4CF();
+    result = ALooper_addFd(looper, d, 0, ALOOPER_EVENT_INPUT, &looperCallback, NULL);
+    __android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "Setup Main Queue with fd %d with result %d", d, result);
 }
 
 #endif
