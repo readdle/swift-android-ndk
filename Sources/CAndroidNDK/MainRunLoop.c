@@ -1,8 +1,5 @@
-#ifndef AndroidNDK_h
-#define AndroidNDK_h
-
-#include <android/looper.h>
-#include <android/log.h>
+#include "AndroidNDK.h"
+#include "MainRunLoop.h"
 
 #include <pthread.h>
 
@@ -22,7 +19,7 @@ typedef struct __CFRunLoopMode *CFRunLoopModeRef;
 // eventfd/timerfd descriptor
 typedef int __CFPort;
 
-typedef struct __CFRunLoop {
+struct __CFRunLoop {
     CFRuntimeBase _base;
     _CFRecursiveMutex _lock;            /* locked for accessing mode list */
     __CFPort _wakeUpPort;           // used for CFRunLoopWakeUp 
@@ -41,15 +38,14 @@ typedef struct __CFRunLoop {
     _Atomic(uint8_t) _fromTSD;
     Boolean _perCalloutARP;
     CFLock_t _timerTSRLock;
-} InternalCFRunLoop;
-
-
-#define APPNAME "MyApp"
+};
 
 int looperCallback(int fd, int events, void *data) {
-    __android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "Start looper callback");
     while (true) {
-        int result = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1.0, true);
+        int result = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, true);
+        if (result == kCFRunLoopRunHandledSource) {
+            continue; // continue run loop
+        }
         if (result == kCFRunLoopRunFinished) {
             return 1; // continue listening for events
         }
@@ -57,30 +53,28 @@ int looperCallback(int fd, int events, void *data) {
             return 0; // stop listening
         }
         if (result == kCFRunLoopRunTimedOut) {
-            return 1; // continue listening for events   
+            return 1; // continue listening for events
         }
-        if (result != kCFRunLoopRunHandledSource) {
-            abort();
-            return 0;
-        }
+        abort(); // unknown
     }
     return 1; // continue listening for events
 }
 
 int _dispatch_get_main_queue_port_4CF(void);
 
-void setupMainQueue() {
-    CFRunLoopRef mainLoop = CFRunLoopGetMain();
-    InternalCFRunLoop *loop = mainLoop;
-    __CFPort fd = loop->_wakeUpPort;
+bool setupAndroidMainRunLoop() {
     ALooper *looper = ALooper_forThread();
-    int result = ALooper_addFd(looper, fd, 0, ALOOPER_EVENT_INPUT, &looperCallback, NULL);
-    __android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "Setup Main Queue with fd %d with result %d", fd, result);
-    loop->_perRunData->ignoreWakeUps = 0x0;
+    if (looper == NULL) {
+        return false;
+    }
 
-    int d = _dispatch_get_main_queue_port_4CF();
-    result = ALooper_addFd(looper, d, 0, ALOOPER_EVENT_INPUT, &looperCallback, NULL);
-    __android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "Setup Main Queue with fd %d with result %d", d, result);
+    CFRunLoopRef mainLoop = CFRunLoopGetMain();
+    __CFPort wakeUpPort = mainLoop->_wakeUpPort;
+    int result = ALooper_addFd(looper, wakeUpPort, 0, ALOOPER_EVENT_INPUT, &looperCallback, NULL);
+    mainLoop->_perRunData->ignoreWakeUps = 0x0;
+
+    int dispatchPort = _dispatch_get_main_queue_port_4CF();
+    result = ALooper_addFd(looper, dispatchPort, 0, ALOOPER_EVENT_INPUT, &looperCallback, NULL);
+
+    return true;
 }
-
-#endif

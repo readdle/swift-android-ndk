@@ -6,11 +6,12 @@ import PackageDescription
 let package = Package(
     name: "AndroidNDK",
     products: [
-        .library(name: "AndroidNDK", targets: ["AndroidNDK"]),
+        .library(name: "AndroidNDK", targets: ["AndroidNDK", "CAndroidNDK"]),
     ],
     dependencies: [],
     targets: [
-        .target(name: "AndroidNDK", linkerSettings: [.linkedLibrary("android"), .linkedLibrary("log")]),
+        .target(name: "CAndroidNDK", linkerSettings: [.linkedLibrary("android"), .linkedLibrary("log")]),
+        .target(name: "AndroidNDK", dependencies: ["CAndroidNDK"]),
         .testTarget(name: "AndroidNDKTests", dependencies: ["AndroidNDK"]),
     ]
 )
