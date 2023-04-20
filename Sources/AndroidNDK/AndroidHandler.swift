@@ -22,50 +22,6 @@ import Glibc
  */
 public class AndroidHandler {
 
-    private static var globalLock = NSLock()
-    private static var globalMainThreadHandler: AndroidHandler?
-
-    // Should be called at environment setup phase from main thread
-    @discardableResult
-    public static func setUpMainThreadHandler() -> AndroidHandler {
-        if let mainThreadHandler = globalMainThreadHandler {
-            return mainThreadHandler
-        }
-        globalLock.lock()
-        defer {
-            globalLock.unlock()
-        }
-        if let mainThreadHandler = globalMainThreadHandler {
-            return mainThreadHandler
-        }
-        guard let mainThreadHandler = AndroidHandler() else {
-            fatalError("No looper at current thread! Call this func from Main Thread")
-        }
-        globalMainThreadHandler = mainThreadHandler
-        return mainThreadHandler
-    }
-
-    public static var mainThreadHandler: AndroidHandler {
-        if let mainThreadHandler = globalMainThreadHandler {
-            return mainThreadHandler
-        }
-        globalLock.lock()
-        defer {
-            globalLock.unlock()
-        }
-        guard let handler = globalMainThreadHandler else {
-            fatalError("Global main handler should be set before this call")
-        }
-        return handler
-    }
-
-    public static func isMainThread() -> Bool {
-        guard let currentThreadLooper = ALooper_forThread() else {
-            return false
-        }
-        return mainThreadHandler.looper == currentThreadLooper
-    }
-
     private let looper: OpaquePointer // ALooper
     private var messagePipe = [Int32](repeating: 0, count: 2)
 

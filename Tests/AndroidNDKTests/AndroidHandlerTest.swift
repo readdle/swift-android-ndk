@@ -78,35 +78,10 @@ class AndroidHandlerTest: XCTestCase {
         XCTAssert(weakReferenceToString == nil)
     }
 
-
-    public func testMainHandler() {
-        let group = DispatchGroup()
-        let handler = AndroidHandler(looper: handlerThread!.looper!)
-        group.enter()
-        handler.post {
-            // Make current handlerThread MainThread
-            // Warning! setUpMainThreadHandler should call only in one test
-            // Otherwise, old value wouldn't reset and all post will go to old Looper
-            AndroidHandler.setUpMainThreadHandler()
-            group.leave()
-        }
-        group.wait()
-
-        group.enter()
-        AndroidHandler.mainThreadHandler.post {
-            XCTAssert(AndroidHandler.isMainThread() == true)
-            group.leave()
-        }
-        group.wait()
-
-        XCTAssert(AndroidHandler.isMainThread() == false)
-    }
-
     static var allTests = [
         ("testHandler", testHandler),
         ("testHandlerReentrance", testHandlerReentrance),
         ("testMemoryFreeing", testMemoryFreeing),
-        ("testMainHandler", testMainHandler),
     ]
 
 }
