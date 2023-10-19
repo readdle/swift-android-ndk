@@ -1,6 +1,8 @@
 #ifndef AndroidNDK_h
 #define AndroidNDK_h
 
+#include <jni.h>
+
 #include <android/api-level.h>
 #include <android/asset_manager.h>
 #include <android/choreographer.h>
