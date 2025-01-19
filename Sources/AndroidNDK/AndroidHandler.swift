@@ -4,7 +4,14 @@
 
 import CAndroidNDK
 import Foundation
+
+#if canImport(Android)
+import Android
+#endif
+
+#if canImport(Glibc)
 import Glibc
+#endif
 
 /**
  * A Handler allows you to send and process Message and Runnable objects associated with a thread's MessageQueue. 
