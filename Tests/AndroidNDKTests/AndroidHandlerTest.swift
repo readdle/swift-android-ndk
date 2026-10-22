@@ -7,6 +7,12 @@
 import Foundation
 import XCTest
 
+#if canImport(Android)
+import Android
+#elseif canImport(Glibc)
+import Glibc
+#endif
+
 class AndroidHandlerTest: XCTestCase {
 
     private var handlerThread: HandlerThread?
