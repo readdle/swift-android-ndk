@@ -84,10 +84,32 @@ class AndroidHandlerTest: XCTestCase {
         XCTAssert(weakReferenceToString == nil)
     }
 
+    public func testCancelWhileBusy() {
+        let thread = handlerThread!
+        let handler = AndroidHandler(looper: thread.looper!)
+
+        // Keep the looper busy, so cancel's wake() lands in the same poll as a callback
+        func repost() {
+            handler.post { repost() }
+        }
+        repost()
+        usleep(10000) // 10ms
+
+        thread.cancel()
+        handlerThread = nil
+
+        let deadline = Date().addingTimeInterval(3)
+        while !thread.isFinished && Date() < deadline {
+            usleep(10000) // 10ms
+        }
+        XCTAssertTrue(thread.isFinished)
+    }
+
     static var allTests = [
         ("testHandler", testHandler),
         ("testHandlerReentrance", testHandlerReentrance),
         ("testMemoryFreeing", testMemoryFreeing),
+        ("testCancelWhileBusy", testCancelWhileBusy),
     ]
 
 }
