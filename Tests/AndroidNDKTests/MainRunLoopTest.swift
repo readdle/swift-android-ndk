@@ -36,7 +36,7 @@ class MainRunLoopTest: XCTestCase {
         }
 
         XCTAssertEqual(counter, 0)
-        AndroidLooper.pollAll()
+        while AndroidLooper.pollOnce() == ALOOPER_POLL_CALLBACK {}
         XCTAssertEqual(counter, 3)
     }
 
@@ -61,7 +61,7 @@ class MainRunLoopTest: XCTestCase {
         }
 
         XCTAssertEqual(counter, 0)
-        AndroidLooper.pollAll()
+        while AndroidLooper.pollOnce() == ALOOPER_POLL_CALLBACK {}
         XCTAssertEqual(counter, 3)
     }
 
@@ -89,11 +89,11 @@ class MainRunLoopTest: XCTestCase {
 
 
         XCTAssertEqual(counter, 0)
-        AndroidLooper.pollAll(withTimeout: 50)
+        AndroidLooper.pollOnce(withTimeout: 50)
         XCTAssertEqual(counter, 1)
-        AndroidLooper.pollAll(withTimeout: 100)
+        AndroidLooper.pollOnce(withTimeout: 1000)
         XCTAssertEqual(counter, 2)
-        AndroidLooper.pollAll(withTimeout: 100)
+        AndroidLooper.pollOnce(withTimeout: 1000)
         XCTAssertEqual(counter, 3)
     }
 

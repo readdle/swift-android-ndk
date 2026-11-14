@@ -103,11 +103,6 @@ public class AndroidLooper {
     }
 
     @discardableResult
-    public static func pollAll(withTimeout timeout: Int32 = 0) -> Int32 {
-        return ALooper_pollAll(timeout, nil, nil, nil)
-    }
-
-    @discardableResult
     public static func pollOnce(withTimeout timeout: Int32 = 0) -> Int32 {
         return ALooper_pollOnce(timeout, nil, nil, nil)
     }
@@ -133,13 +128,17 @@ public class HandlerThread: Thread {
     public override func main() {
         self.looper = AndroidLooper()
         prepareDispatchGroup.leave()
-        var result = Int32(ALOOPER_POLL_TIMEOUT)
-        while result == ALOOPER_POLL_TIMEOUT {
-            result = AndroidLooper.pollAll(withTimeout: HandlerThread.timeout)
-        }
+        // pollOnce returns after each batch of callbacks; keep going until wake() or an error.
+        // A wake() that lands in the same poll as a callback is reported as ALOOPER_POLL_CALLBACK,
+        // so cancel() also sets isCancelled for the loop to see.
+        var result: Int32
+        repeat {
+            result = AndroidLooper.pollOnce(withTimeout: HandlerThread.timeout)
+        } while !isCancelled && (result == ALOOPER_POLL_TIMEOUT || result == ALOOPER_POLL_CALLBACK)
     }
 
     public override func cancel() {
+        super.cancel()
         looper?.wake()
     }
 
